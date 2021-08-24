@@ -133,7 +133,7 @@ export default{
     },
     methods: {
         init(){
-            this.m3.callFS("/matrix/m3appstore/user.js", this.auth.username).then( (val)=>{
+            this.m3.callFS("/matrix/m3dfs/user.js", this.auth.username).then( (val)=>{
                 let rtn = val.message;
                 
                 this.model = {

@@ -13,7 +13,7 @@ hostPreFix="http://"
 host=""
 
 # AppStore
-fileName="/matrix/m3appstore/appStoreAuto.js"
+fileName="/matrix/m3dfs/appStoreAuto.js"
 fileForm="input={\"action\": \"c\",\"param\":{ \"name\": \"$target\", \"title\": \"$appname\", \"version\": \"v0.5\", \"author\": \"wecise\" }}"
 
 if [[ $hostTerm =~ $hostPreFix ]] 

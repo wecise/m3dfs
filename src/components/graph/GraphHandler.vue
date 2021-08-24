@@ -63,8 +63,9 @@
     </el-header>
     <el-main id="graphContainer" ref="graphContainer" style="width:100vw;height:100vh;min-width:100vw;position:releative;overflow:hidden;padding:0px;"></el-main>
     <div ref="outlineContainer"
-        style="position:absolute;overflow:hidden;top:40px;right:20px;width:200px;height:140px;background:transparent;box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);"
-        v-show="graph.control.outline.show">
+        class="outlineContainer"
+        v-show="graph.control.outline.show"
+        draggable="true">
     </div>
   </el-container>
 
@@ -95,7 +96,7 @@ export default {
             control:{
                 ifIcon: true,
                 outline: {
-                    show: false,
+                    show: true,
                     inst: null
                 },
                 toolbar:{
@@ -1387,6 +1388,16 @@ export default {
 </style>
 
 <style>
+    .outlineContainer{
+        position:absolute;
+        overflow:hidden;
+        top:20px;
+        right:90px;
+        width:200px;
+        height:140px;
+        background:transparent;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    }
     /* mxgraph contextmenu style */
     td.mxPopupMenuIcon div {
         width:16px;
