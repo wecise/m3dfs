@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import IndexView from './graph/index';
+import IndexView from './dfs/index.vue';
 
 export default {
   name: 'MainView',

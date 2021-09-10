@@ -32,9 +32,10 @@ export default {
   },
   created(){
     setTimeout(()=>{
+      console.log(this.global)
       this.global = this.m3.global;
       this.auth = this.m3.auth;
-    },500)
+    },1500)
       
   }
 }
@@ -47,6 +48,7 @@ export default {
     margin: 0px;
     padding: 0px;
     overflow: hidden;
+    background: #f2f2f2;
   }
   
   .el-menu .svg-icon{
