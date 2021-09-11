@@ -28,14 +28,12 @@
                              @order-by="onOrderBy"
                              @dfs-export="onDfsExport"
                              @dfs-import="onDfsImport"></ToolBar>
-                    <div class="content">
                         <component v-bind:is="currentView" 
                             :model="model"
                             :selected="selectedItem"
                             v-if="model"
                             @dblclick.native="onResetStatus"
                             @dbl-click="onLoad"></component>
-                    </div>
                 </SplitArea>
             </Split>
         </el-main>
@@ -53,7 +51,7 @@
     export default {
         data(){
             return {
-                root: {fullname: '/'},
+                root: {parent:"/", fullname: "/"},
                 rootTitle: "我的文件",
                 currentView: "gridView",
                 selectedItem: [],
@@ -67,8 +65,10 @@
             thumbnailsView,
             tableView
         },
-        created(){
-            this.onLoad(null);
+        mounted(){
+            this.$nextTick(()=>{
+                this.onLoad(null);
+            })
         },
         methods:{
             onToggleView(view){
@@ -86,19 +86,6 @@
             },
             onLoad(node){
                 
-                // 点击【我的文件】返回不同的root
-                if(_.isNull(node)){
-                    this.rootPath = this.root.fullname;
-                }
-                
-                // 目录
-                if(node.ftype === 'dir'){
-                    this.rootPath = node.fullname.replace(/\/\//g,'/');
-                }
-                if(typeof(node) === 'string' || node.ftype === 'dir'){
-                    this.rootPath = node.fullname.replace(/\/\//g,'/');
-                }
-
                 let fullname = node ? node.fullname : "/";
                 this.root = node ? node : {fullname: "/"};
                 this.m3.dfsList({fullname:fullname}).then( res=>{
@@ -390,12 +377,14 @@
     }
 
     .el-main .content{
-        padding: 30px 20px 20px 20px;
-        height: calc(100% - 110px);
+        padding: 0px 10px;
+        height: calc(100% - 70px);
         margin-top:30px;
         overflow: auto;
         display: flex;
         flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: flex-start;
         align-content: flex-start;
         background: #ffffff;
     }

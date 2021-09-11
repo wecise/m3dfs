@@ -1,18 +1,24 @@
 <template>
-    <el-checkbox-group v-model="dt.selected" class="dfs-container">
+    <el-checkbox-group v-model="dt.selected" class="content dfs-thumbnails-container">
         <el-button type="default" 
                 class="dfs-node"
                 @dblclick.native="onDblClick(item)"
                 @click="onTriggerClick(item)"
                 v-for="item in dt.rows"
                 :key="item.id">
-                <div style="position: relative;right: -100px;">    
+                <div class="dfs-menu">    
                     <el-dropdown trigger="hover" placement="top-start" @command="onMenuCommand">
                             <span class="el-dropdown-link">
                                 <i class="el-icon-arrow-down el-icon--right"></i>
                             </span>
                             <el-dropdown-menu slot="dropdown">
-                                
+                                <el-dropdown-item 
+                                    :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
+                                    v-for="(menuItem,index) in getMenuByType(item)" 
+                                    :key="index"
+                                    :divided="menuItem | pickDivided">
+                                    {{menuItem.name}}
+                                </el-dropdown-item>
                             </el-dropdown-menu>
                     </el-dropdown>
                 </div>
@@ -134,6 +140,10 @@
             onTriggerClick(item){
                 this.$refs['checkBox_'+item.id][0].$el.click();
             },
+            getMenuByType(item){
+                let parent = this.$parent.$parent.$parent.$parent.$parent;
+                return parent.getMenuByType(item);
+            },
             onMenuCommand(){
 
             },
@@ -162,12 +172,13 @@
     .dfs-node{
         max-width: 25em;
         width: 25em;
-        height:auto;
+        height: 230px;
         border-radius: 10px!important;
         margin: 5px;
         border: unset;
         box-shadow: 0 0px 5px 0 rgba(0, 0, 0, 0.05);
         background: rgb(239, 244, 246);
+        margin: 10px
     }
     .dfs-props > p{
         white-space:nowrap;
@@ -176,16 +187,22 @@
         margin:5px;
         text-align:left;
     }
+
+    .dfs-menu{
+        position: relative;
+        right: -130px;
+    }
 </style>
 
 <style>
-    .dfs-container .el-checkbox__input{
-        float:right;
+    .dfs-thumbnails-container .el-checkbox__input>.el-checkbox__inner {
+        right: -135px;
+        bottom: 5px;
     }
-    .dfs-container .el-checkbox__label{
+    .dfs-thumbnails-container .el-checkbox__label{
         display: none;
     }
-    .dfs-container .el-checkbox__input > .el-checkbox__inner{
+    .dfs-thumbnails-container .el-checkbox__input > .el-checkbox__inner{
         border:unset;
     }
 </style>

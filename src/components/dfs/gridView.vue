@@ -1,12 +1,27 @@
 <template>
-    <el-checkbox-group v-model="dt.selected" class="dfs-container">
+    <el-checkbox-group v-model="dt.selected" class="content dfs-grid-container">
         <el-button type="default" 
                 class="dfs-node"
                 @dblclick.native="onDblClick(item)"
                 @click="onTriggerClick(item)"
                 v-for="(item,index) in dt.rows"
                 :key="index">
-                
+                <div class="dfs-menu">    
+                    <el-dropdown trigger="hover" placement="top-start" @command="onMenuCommand">
+                            <span class="el-dropdown-link">
+                                <i class="el-icon-arrow-down el-icon--right"></i>
+                            </span>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item 
+                                    :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
+                                    v-for="(menuItem,index) in getMenuByType(item)" 
+                                    :key="index"
+                                    :divided="menuItem | pickDivided">
+                                    {{menuItem.name}}
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                    </el-dropdown>
+                </div>
                 <el-image style="width:34px;height:34px;margin:5px;" :src="item | pickIcon"></el-image>
                 <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" v-show="item.editable">
                     <el-input v-model="item.name" 
@@ -118,6 +133,10 @@
                     },500)
                 },500)
             },
+            getMenuByType(item){
+                let parent = this.$parent.$parent.$parent.$parent.$parent;
+                return parent.getMenuByType(item);
+            },
             onRename(item){
                 if(_.find(this.model,{id:item.id}).name != item.name){
                     this.$root.$refs.viewRef.$children[0].onRename(_.find(this.model,{id:item.id}), item);
@@ -140,20 +159,24 @@
         border: unset;
         box-shadow: 0 0px 5px 0 rgba(0, 0, 0, 0.05);
         background: rgb(239, 244, 246);
+        margin: 10px
     }
-    .dfs-node + .dfs-node{
-        margin: 5px;
+
+    .dfs-menu{
+        position: relative;
+        right: -50px;
     }
 </style>
 
 <style>
-    .dfs-container .el-checkbox__input{
-        float:right;
+    .dfs-grid-container .el-checkbox__input>.el-checkbox__inner {
+        right: -60px;
+        bottom: 0px;
     }
-    .dfs-container .el-checkbox__label{
+    .dfs-grid-container .el-checkbox__label{
         display: none;
     }
-    .dfs-container .el-checkbox__input > .el-checkbox__inner{
+    .dfs-grid-container .el-checkbox__input > .el-checkbox__inner{
         border:unset;
     }
 </style>
