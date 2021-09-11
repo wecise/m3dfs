@@ -131,7 +131,16 @@
                 this.$emit("toggle-view",view);
             },
             onOpen(data){
-                this.$emit("node-click",data);
+                
+                if(_.isEmpty(data)){
+                    this.$emit("node-click", {parent:"/",fullname:"/"});
+                } else {
+                    let parent = this.filePath.slice(0,-1);
+                    let fullname = _.uniq(parent.concat(data)).join("/");
+                    console.log(parent,fullname)
+                    this.$emit("node-click",{parent:parent,fullname:fullname});
+                }
+                
             },
             onRefresh(){
                 this.$emit("dfs-refresh",this.root);
