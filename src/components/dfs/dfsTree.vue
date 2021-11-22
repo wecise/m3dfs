@@ -81,7 +81,7 @@
                 this.$set(item, 'show', false)
             },
             onRefresh(item,index){
-                this.m3.dfsList({fullname:item.fullname}).then( rtn=>{
+                this.m3.dfs.list({fullname:item.fullname}).then( rtn=>{
                     this.$set(item, 'children', rtn.message);
                 } );
             },
@@ -174,7 +174,7 @@
             onNodeClick(data){
 
                 if(data.isdir) {
-                    this.m3.dfsList({fullname:data.fullname}).then( res=>{
+                    this.m3.dfs.list({fullname:data.fullname}).then( res=>{
                         
                         let children =  _.chain(res.message).map(v=>{
                                             return _.extend(v,{show:false});

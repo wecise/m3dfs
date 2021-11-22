@@ -1,5 +1,5 @@
 <template>
-    <el-checkbox-group v-model="dt.selected" class="content dfs-thumbnails-container">
+    <el-checkbox-group v-model="selected" class="content dfs-thumbnails-container">
         <el-button type="default" 
                 class="dfs-node"
                 @dblclick.native="onDblClick(item)"
@@ -42,7 +42,7 @@
                     </p>
                     <p>描述：{{item|pickRemark}}</p>
                 </div>
-                <el-checkbox :label="item.id" :ref="'checkBox_'+item.id"></el-checkbox>
+                <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
         </el-button>
     </el-checkbox-group>
 </template>
@@ -62,21 +62,19 @@
         data(){
             return {
                 dt:{
-                    rows: [],
-                    columns: [],
-                    selected: []
+                    rows: []
                 }
             }
         },
         watch: {
-            model(val,oldVal){
+            model(){
                 this.dt.rows = [...this.model];
             },
             selected:{
                 handler(val){
-                    this.dt.selected = val;
+                    this.$emit('update:selected',val)
                 },
-                immediate:true
+                deep: true
             }
         },
         filters: {
@@ -97,14 +95,14 @@
             pickIcon(item){
                 // extend || ...
                 if( item.fullname === '/extend' ){
-                    return `/static/assets/images/files/png/dir-lock.png`;
+                    return `${window.assetsURLBase}/images/files/png/dir-lock.png`;
                 } else {
 
                     try {
-                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `/static/assets/images/files/png/${item.ftype}.png`;
+                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
                     }
                     catch(error){
-                        return `/static/assets/images/files/png/${item.ftype}.png`;
+                        return `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
                     }
                 }
 
@@ -144,8 +142,8 @@
                 let parent = this.$parent.$parent.$parent.$parent.$parent;
                 return parent.getMenuByType(item);
             },
-            onMenuCommand(){
-
+            onMenuCommand(item){
+                this.$emit("menu-command",item);
             },
             onSetFocus(item){
                 setTimeout(()=>{

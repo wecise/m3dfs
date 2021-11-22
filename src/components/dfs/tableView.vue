@@ -1,15 +1,17 @@
 <template>
     <div class="content dfs-table-container">
-        <el-table style="width: 100%"
-            :data="dt.rows"
+        <el-table  :data="dt.rows"
             stripe
+            border
             highlight-current-row="true"
             @selection-change="onSelectionChange"
+            height="calc(100vh - 400px)"
+            style="width: 100%"
             ref="table">
             <el-table-column type="selection" align="center"></el-table-column> 
             <template v-for="(item,index) in dt.columns">
                 <el-table-column
-                    sortable 
+                    sortable
                     show-overflow-tooltip
                     :key="index"
                     :prop="item.field"
@@ -42,7 +44,7 @@
                                 
                             </div>
                             <div v-else-if="item.field==='tags'">
-                                <mx-tag domain='files' :model.sync="scope.row.tags" :id="scope.row.id" limit="1"></mx-tag>
+                                <TagView domain='files' :model.sync="scope.row.tags" :id="scope.row.id" limit="1"></TagView>
                             </div>
                             <div v-else>
                                 {{scope.row[item.field]}}
@@ -57,10 +59,14 @@
 
 <script>
     import _ from 'lodash';
+    import TagView from '../tags/TagView.vue';
     export default {
         props: {
             model: Array,
             selected: Array
+        },
+        components:{
+            TagView
         },
         data(){
             return {
@@ -79,39 +85,47 @@
             },
             selected:{
                 handler(val){
-                    this.dt.selected = val;
+                    this.$emit('update:selected',val)
                 },
-                immediate:true
+                deep: true
             }
         },
         created(){     
             this.m3.callFS("/matrix/m3dfs/fs_data.js", null).then(res=>{
                 _.extend(this.dt, {columns: _.map(res.message.columns, function(v){
                         
-                if(_.isUndefined(v.visible)){
-                    _.extend(v, { visible: true });
-                }
+                    if(_.isUndefined(v.visible)){
+                        _.extend(v, { visible: true });
+                    }
 
-                if(!v.render){
-                    return v;
-                } else {
-                    return _.extend(v, { render: eval(v.render) });
-                }
-                
-            })});
+                    if(!v.render){
+                        return v;
+                    } else {
+                        return _.extend(v, { render: eval(v.render) });
+                    }
+                    
+                })});
             
-            _.extend(this.dt, { rows: [...this.model] } );
+                _.extend(this.dt, { rows: [...this.model] } );
             });
+        },
+        mounted(){
+            this.$nextTick(()=>{
+                if (this.selected) {
+                    this.selected.forEach(row => {
+                        this.$refs.table.toggleRowSelection(row);
+                    });
+                } else {
+                    this.$refs.table.clearSelection();
+                }
+            })
         },
         methods:{
             forward(row){
                 this.$emit('dbl-click', row);
             },  
-            onCellClick(row,column,cell,event){
-
-            },
             onSelectionChange(val){
-                this.$root.$refs.viewRef.$children[0].selectedItem = _.map(val,'id');
+                this.selected = val;
             },
             onSetFocus(item){
                 _.forEach(this.dt.rows, (v)=>{

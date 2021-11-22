@@ -1,14 +1,8 @@
-<!--
-    tree -> view
-
-    view -> tree
-
--->
 <template>
-    <el-container>
+    <el-container style="height: calc(100vh - 65px);">
         <el-main>
-            <Split direction="horizontal" :gutterSize="5">
-                <SplitArea :size="20" :minSize="0" style="overflow:hidden;background:#f2f2f2;">
+            <Split direction="horizontal" :gutterSize="5" style="border:1px solid #ddd;">
+                <SplitArea :size="20" :minSize="0" style="overflow:hidden;background: rgb(242, 242, 242);">
                     <DfsTree :root="root" 
                         @node-click="onNodeClick"
                         @dfs-newdir="onNewDir"
@@ -18,6 +12,7 @@
                 <SplitArea :size="80" :minSize="0" style="overflow:hidden;">
                     <ToolBar :root="root" 
                              :rootTitle="rootTitle" 
+                             :selected="selectedItem"
                              @toggle-view="onToggleView"
                              @dfs-refresh="onRefresh"
                              @select-all="onSelectAll"
@@ -25,49 +20,77 @@
                              @dfs-newdir="onNewDir"
                              @dfs-newfile="onNewFile"
                              @dfs-delete="onDfsDelete"
+                             @dfs-copyTo="onCopyTo"
+                             @dfs-moveTo="onMoveTo"
                              @order-by="onOrderBy"
                              @dfs-export="onDfsExport"
                              @dfs-import="onDfsImport"></ToolBar>
                         <component v-bind:is="currentView" 
                             :model="model"
-                            :selected="selectedItem"
+                            :selected.sync="selectedItem"
                             v-if="model"
                             @dblclick.native="onResetStatus"
-                            @dbl-click="onLoad"></component>
+                            @dbl-click="onLoad"
+                            @menu-command="onMenuCommand"
+                            ref="dfsList"
+                            style="overflow-x: hidden;"></component>
                 </SplitArea>
             </Split>
+            <el-dialog
+                title="文件复制"
+                :visible.sync="dialog.copyTo.show"
+                width="30%!important"
+                @close="onCopyToClose"
+                append-to-body>
+                <CopyTo :model="dialog.copyTo" :sourceList="selectedItem"></CopyTo>
+            </el-dialog>
+            <el-dialog
+                title="文件移动"
+                :visible.sync="dialog.moveTo.show"
+                width="30%!important"
+                @close="onMoveToClose"
+                append-to-body>
+                <MoveTo :model="dialog.moveTo" :sourceList="selectedItem"></MoveTo>
+            </el-dialog>
         </el-main>
     </el-container>
 </template>
 
 <script>
     import _ from 'lodash';
-    import DfsTree from './dfsTree.vue';
-    import ToolBar from './toolBar.vue';
-    import gridView from './gridView.vue';
-    import thumbnailsView from './thumbnailsView.vue';
-    import tableView from './tableView.vue';
 
     export default {
+        props:{
+            root: Object
+        },
         data(){
             return {
-                root: {parent:"/", fullname: "/"},
                 rootTitle: "我的文件",
                 currentView: "gridView",
                 selectedItem: [],
-                model: null
+                model: null,
+                dialog: {
+                    copyTo:{
+                        show: false
+                    },
+                    moveTo:{
+                        show: false
+                    }
+                }
             }
         },
         components:{
-            DfsTree,
-            ToolBar,
-            gridView,
-            thumbnailsView,
-            tableView
+            DfsTree: resolve => {require(['./dfsTree.vue'], resolve)},
+            ToolBar: resolve => {require(['./toolBar.vue'], resolve)},
+            gridView: resolve => {require(['./gridView.vue'], resolve)},
+            thumbnailsView: resolve => {require(['./thumbnailsView.vue'], resolve)},
+            tableView: resolve => {require(['./tableView.vue'], resolve)},
+            CopyTo: resolve => {require(['./dfsCopyTo.vue'], resolve)},
+            MoveTo: resolve => {require(['./dfsMoveTo.vue'], resolve)}
         },
         mounted(){
             this.$nextTick(()=>{
-                this.onLoad(null);
+                this.onLoad(this.root);
             })
         },
         methods:{
@@ -79,7 +102,7 @@
             },
             onSelectAll(){
                 if(_.isEmpty(this.selectedItem)){
-                    this.selectedItem = _.map(this.model,'id');
+                    this.selectedItem = this.model;
                 } else {
                     this.selectedItem = [];
                 }
@@ -88,7 +111,7 @@
                 
                 let fullname = node ? node.fullname : "/";
                 this.root = node ? node : {fullname: "/"};
-                this.m3.dfsList({fullname:fullname}).then( res=>{
+                this.m3.dfs.list({fullname:fullname}).then( res=>{
                     this.model = _.orderBy(_.map(res.message,(v,k)=>{
 
                                     return _.merge(v, {editable: false});
@@ -99,116 +122,18 @@
             onResetStatus(){
 
             },
-            getMenuByType(item){
-                // 根据文件类型返回右键菜单
-                let model = {
-                    "js": [
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑/运行", icon: "fas fa-play", fun: "editIt" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "html": [
-                        { name: "发布应用", icon: "fab fa-codepen", fun: "onNewAppDeploy" },
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "运行", icon: "fas fa-play", fun: "runHtml" },
-                        { name: "运行链接", icon: "fas fa-map-marker-alt", fun: "copyUrl" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "htm": [
-                        { name: "发布应用", icon: "fab fa-codepen", fun: "onNewAppDeploy" },
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "运行", icon: "fas fa-play", fun: "runHtml" },
-                        { name: "运行链接", icon: "fas fa-map-marker-alt", fun: "copyUrl" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info" }
-                    ],
-                    "md":[
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "打开", icon: "fas fa-play", fun: "openIt", type: null },
-                        { name: "打开链接", icon: "fas fa-map-marker-alt", fun: "copyUrl" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "json":[
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "打开", icon: "fas fa-play", fun: "openIt", type: true },
-                        { name: "打开链接", icon: "fas fa-map-marker-alt", fun: "copyUrl" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "imap":[
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "ishow":[
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "iflow":[
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "编辑", icon: "fas fa-edit", fun: "editIt" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "dir": [
-                        { name: "打开", icon: "fas fa-folder-open", fun: "openIt" },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ],
-                    "normal": [
-                        { name: "打开", icon: "fas fa-folder-open", fun: "openIt" },
-                        { name: "下载", icon: "fas fa-download", fun: "downloadIt", type: true },
-                        { name: "删除", icon: "fas fa-trash", fun: "deleteIt", type: true },
-                        { name: "共享", icon: "fas fa-share-square", fun: "shareIt" },
-                        { name: "属性", icon: "fas fa-info", fun: "info", divided:true }
-                    ]
-                };
-
-                var menu = null;
-                try{
-                    if(model[item.ftype]){
-                        menu = model[item.ftype];
-                    } else {
-                        menu = model["normal"];
-                    }
-                } catch(err){
-                    menu = model["normal"];
-                } finally{
-                    
-                    if(_.startsWith(item.parent,'/web')){
-                        menu.push({ name: "同步", icon: "fas fa-download", fun: "onSyncToLocal", divided:true});
-                    }
-
-                    if(_.endsWith(window.location.pathname,'api') && _.includes(['js'],item.ftype)) {
-                        menu.push({ name: "任务", icon: "fas fa-tasks", fun: "", divided:true});
-                    }
+            onMenuCommand(cmd){
+                if(!cmd.type){
+                    this[cmd.fun](cmd.param);
+                } else {
+                    this[cmd.fun](cmd.param,cmd.type);
                 }
-                return menu;
-
             },
             onRefresh(node){
                 this.onLoad(node);
             },
             onNewDir(node){
+                console.log(111,node)
                 this.$prompt('请输入目录名称', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消'
@@ -228,11 +153,15 @@
                                     data:{content:null,ftype:'dir',attr:""}
                     };
                     
-                    this.m3.dfsNew(param).then(res=>{
+                    this.m3.dfs.newFile(param).then(res=>{
+                        
                         this.$message({
                             type: "success",
                             message: '新建目录成功'
                         })
+
+                        this.onRefresh(this.root);
+                        
                     }).catch(err=>{
                         this.$message({
                             type: "error",
@@ -241,10 +170,10 @@
                     });
 
                     
-                }).catch(() => {
+                }).catch(err => {
                     this.$message({
                     type: 'info',
-                    message: '取消新建目录操作'
+                    message: '取消新建目录操作 ' + err
                     });       
                 });
             },
@@ -268,11 +197,14 @@
                                     data:{content:null,ftype:'md',attr:""}
                     };
                     
-                    this.m3.dfsNew(param).then(res=>{
+                    this.m3.dfs.newFile(param).then(res=>{
                         this.$message({
                             type: "success",
                             message: '新建文件成功'
                         })
+
+                        this.onRefresh(this.root);
+
                     }).catch(err=>{
                         this.$message({
                             type: "error",
@@ -280,43 +212,93 @@
                         })
                     });
                     
-                }).catch(() => {
+                }).catch(err => {
                     this.$message({
                     type: 'info',
-                    message: '取消新建文件操作'
+                    message: '取消新建文件操作 ' + err
                     });       
                 });
             },
-            onDfsDelete(node){
+            onDfsDelete(){
                 
-                this.$confirm(`确定要删除：${node.name}？`, '删除提示', {
+                let nodes = this.$refs.dfsList.selected;
+                
+                if(_.isEmpty(nodes)){
+                    this.$message.warning("请选择需要删除项目")
+                    return false;
+                }
+
+                const h = this.$createElement;
+                this.$msgbox({
+                    title: `确定要删除`,
+                    message: h('p', null, [
+                            _.map(nodes,s=>{
+                                return h('p', null, s.fullname)
+                            })
+                        ]
+                    ),
+                    showCancelButton: true,
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'error'
                 }).then(() => {
                     
-                    this.m3.dfsDelete({parent:node.parent, name:node.name}).then(()=>{
-                        this.$message({
-                            type: "success",
-                            message: '删除成功'
-                        })
-                    }).catch(err=>{
-                        this.$message({
-                            type: "error",
-                            message: '删除失败：' + err
-                        })
-                    });
+                    nodes.forEach(v=>{
+                        this.m3.dfs.deleteFile({parent:v.parent, name:v.name}).then(res=>{
+                            if(res.status === 'ok'){
+                                this.$message({
+                                    type: "success",
+                                    message: '删除成功'
+                                })
 
-                }).catch(() => {
+                                this.onRefresh(this.root);
+                            } else {
+                                this.$message({
+                                    type: "error",
+                                    message: '删除失败：' + res.message
+                                })
+                            }
+
+                        }).catch(err=>{
+                            this.$message({
+                                type: "error",
+                                message: '删除失败：' + err
+                            })
+                        });
+                    })
+
+                }).catch(err => {
                     this.$message({
                         type: 'info',
-                        message: '取消删除操作'
+                        message: '取消删除操作 ' + err
                     });   
                 });
+                
             },
             onOrderBy(data){
                 let command = JSON.parse(data);
                 this.model = _.orderBy(this.model,[command.prop],[command.type]);
+            },
+            onCopyTo(){
+                this.dialog.copyTo.show = true;
+            },
+            onMoveTo(){
+                this.dialog.moveTo.show = true;
+            },
+            onCopyToClose(){
+                this.selectedItem = [];
+            },
+            onMoveToClose(){
+                this.selectedItem = [];
+            },
+            onDownload(data){   
+                if(data.ftype == 'dir'){
+                    console.log(data)
+                } else {
+                    let url = `/fs/${data.parent}/${data.name}?type=download&issys=true`;
+                    let target = '_blank';
+                    window.open(url, target);
+                }
             },
             onDfsExport(data){
                 this.$confirm(`确认要导出 ${data.parent} 目录下的所有文件?`, '提示', {
@@ -362,24 +344,125 @@
                         message: "导入操作已取消"
                     })  
                 }); 
+            },
+            getMenuByType(item){
+                // 根据文件类型返回右键菜单
+                let model = {
+                    "js": [
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑/运行", icon: "el-icon-video-play", fun: "editIt" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "html": [
+                        { name: "发布应用", icon: "el-icon-thumb", fun: "onNewAppDeploy" },
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "运行", icon: "el-icon-video-play", fun: "runHtml" },
+                        { name: "运行链接", icon: "el-icon-link", fun: "copyUrl" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "htm": [
+                        { name: "发布应用", icon: "el-icon-thumb", fun: "onNewAppDeploy" },
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "运行", icon: "el-icon-video-play", fun: "runHtml" },
+                        { name: "运行链接", icon: "el-icon-link", fun: "copyUrl" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info" }
+                    ],
+                    "md":[
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "打开", icon: "el-icon-video-play", fun: "openIt", type: null },
+                        { name: "打开链接", icon: "el-icon-link", fun: "copyUrl" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "json":[
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "打开", icon: "el-icon-video-play", fun: "openIt", type: true },
+                        { name: "打开链接", icon: "el-icon-link", fun: "copyUrl" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "imap":[
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "ishow":[
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "iflow":[
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "编辑", icon: "el-icon-edit-outline", fun: "editIt" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "dir": [
+                        { name: "打开", icon: "el-icon-folder-opened", fun: "openIt" },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ],
+                    "normal": [
+                        { name: "打开", icon: "el-icon-folder-opened", fun: "openIt" },
+                        { name: "下载", icon: "el-icon-download", fun: "onDownload", type: true },
+                        { name: "删除", icon: "el-icon-delete", fun: "deleteIt", type: true },
+                        { name: "共享", icon: "el-icon-share", fun: "shareIt" },
+                        { name: "属性", icon: "el-icon-tickets", fun: "info", divided:true }
+                    ]
+                };
+
+                var menu = null;
+                try{
+                    if(model[item.ftype]){
+                        menu = model[item.ftype];
+                    } else {
+                        menu = model["normal"];
+                    }
+                } catch(err){
+                    menu = model["normal"];
+                } finally{
+                    
+                    if(_.startsWith(item.parent,'/web')){
+                        menu.push({ name: "同步", icon: "el-icon-download", fun: "onSyncToLocal", divided:true});
+                    }
+
+                    if(_.endsWith(window.location.pathname,'api') && _.includes(['js'],item.ftype)) {
+                        menu.push({ name: "任务", icon: "fas fa-tasks", fun: "", divided:true});
+                    }
+                }
+                return menu;
+
             }
         }
     }
 </script>
 
 <style scoped>
-    .el-container{
-        height: calc(100vh - 80px);
-    }
+    
     .el-main{
-        padding:0px;
         overflow: hidden;
     }
 
     .el-main .content{
-        padding: 0px 10px;
         height: calc(100% - 70px);
-        margin-top:30px;
         overflow: auto;
         display: flex;
         flex-wrap: wrap;
@@ -388,4 +471,6 @@
         align-content: flex-start;
         background: #ffffff;
     }
+
+   
 </style>

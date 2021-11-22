@@ -1,6 +1,6 @@
 <template>
     
-    <div class="container">
+    <div class="toolbar-container">
 
         <div class="breadcrumb">
             <el-breadcrumb separator-class="el-icon-arrow-right">
@@ -58,8 +58,8 @@
                 </el-button>
             </el-tooltip>
 
-            <el-tooltip :content="selectedItem?'选择所有':'取消选择'" placement="top">
-                <el-button type="text" @click="onSelectAll" :icon="selectedItem?'el-icon-folder-checked':'el-icon-document-remove'">
+            <el-tooltip :content="selected.length===0?'选择所有':'取消选择'" placement="top">
+                <el-button type="text" @click="onSelectAll" :icon="selected.length===0?'el-icon-folder-checked':'el-icon-document-remove'">
                 </el-button>
             </el-tooltip>
 
@@ -105,12 +105,13 @@
     export default {
         props: {
             root: Object,
-            rootTitle: String
+            rootTitle: String,
+            selected: Array
         },
         data(){
             return {
-                rootPath: this.root.fullname,
-                selectedItem: null
+                rootFullName: _.clone(this.root.fullname.split("/")),
+                rootPath: this.root.fullname
             }
         },
         computed: {
@@ -120,7 +121,7 @@
         },
         watch: {
             root: {
-                handler(val,oldVal){
+                handler(val){
                     this.rootPath = val.fullname;
                 },
                 immediate:true
@@ -132,12 +133,14 @@
             },
             onOpen(data){
                 
+                if(this.rootFullName.includes(data)) return;
+
                 if(_.isEmpty(data)){
                     this.$emit("node-click", {parent:"/",fullname:"/"});
                 } else {
                     let parent = this.filePath.slice(0,-1);
                     let fullname = _.uniq(parent.concat(data)).join("/");
-                    console.log(parent,fullname)
+                    
                     this.$emit("node-click",{parent:parent,fullname:fullname});
                 }
                 
@@ -158,13 +161,24 @@
                 this.$emit("select-all");
             },
             onCopyTo(){
-
+                console.log(this.selected)
+                if(this.selected.length > 0){
+                    this.$emit("dfs-copyTo",this.root);
+                } else {
+                    this.$message.warning("请选择需要复制的文件");
+                    return false;
+                }
             },
             onMoveTo(){
-                
+                if(this.selected.length > 0){
+                    this.$emit("dfs-moveTo",this.root);
+                } else {
+                    this.$message.warning("请选择需要移动的文件");
+                    return false;
+                }
             },
             onDelete(){
-
+                this.$emit("dfs-delete",this.root);
             },
             onExport(){
                 this.$emit("dfs-export",this.root);
@@ -177,22 +191,22 @@
 </script>
 
 <style scoped>
-    .container{
+    .toolbar-container{
         width: 100%;
-        height: 40px;
+        height: 80px;
     }
-    .container > .breadcrumb{
+    .toolbar-container > .breadcrumb{
         background: #f2f2f2;
         height:40px;
         line-height:40px;
         padding: 0 10px;
     }
-    .container > .breadcrumb > .el-breadcrumb{
+    .toolbar-container > .breadcrumb > .el-breadcrumb{
         height:40px;
         line-height:40px;
     }
 
-    .container > .toolbar{
+    .toolbar-container > .toolbar{
         text-align:right;
         height:40px;
         line-height:40px;
@@ -200,15 +214,15 @@
         background: #ffffff;
     }
 
-    .container > .toolbar > .el-button > [class^=el-icon-]{
+    .toolbar-container > .toolbar > .el-button > [class^=el-icon-]{
         font-size: 15px!important;
     }
-    .container > .toolbar .fileinput-button {
+    .toolbar-container > .toolbar .fileinput-button {
         position: relative;
         overflow: hidden;
         display: inline-block;
     }
-    .container > .toolbar .fileinput-button input {
+    .toolbar-container > .toolbar .fileinput-button input {
         position: absolute;
         top: 0;
         right: 0;

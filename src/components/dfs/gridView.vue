@@ -1,11 +1,11 @@
 <template>
-    <el-checkbox-group v-model="dt.selected" class="content dfs-grid-container">
+    <el-checkbox-group v-model="selected" class="content dfs-grid-container">
         <el-button type="default" 
                 class="dfs-node"
                 @dblclick.native="onDblClick(item)"
                 @click="onTriggerClick(item)"
-                v-for="(item,index) in dt.rows"
-                :key="index">
+                v-for="item in dt.rows"
+                :key="item.id">
                 <div class="dfs-menu">    
                     <el-dropdown trigger="hover" placement="top-start" @command="onMenuCommand">
                             <span class="el-dropdown-link">
@@ -33,7 +33,7 @@
                 <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" @click.self="onSetFocus(item)" v-show="!item.editable">
                     {{item.name}}
                 </p>
-                <el-checkbox :label="item.id" :ref="'checkBox_'+item.id"></el-checkbox>
+                <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
         </el-button>
     </el-checkbox-group>
 </template>
@@ -48,20 +48,19 @@
         data(){
             return {
                 dt:{
-                    rows: [],
-                    selected: []
+                    rows: []
                 }
             }
         },
         watch: {
-            model(val,oldVal){
+            model(){
                 this.dt.rows = [...this.model];
             },
             selected:{
                 handler(val){
-                    this.dt.selected = val;
+                    this.$emit('update:selected',val)
                 },
-                immediate:true
+                deep: true
             }
         },
         filters: {
@@ -82,14 +81,13 @@
             pickIcon(item){
                 // extend || ...
                 if( item.fullname === '/extend' ){
-                    return `/static/assets/images/files/png/dir-lock.png`;
+                    return `${window.assetsURLBase}/images/files/png/dir-lock.png`;
                 } else {
-
                     try {
-                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `/static/assets/images/files/png/${item.ftype}.png`;
+                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
                     }
                     catch(error){
-                        return `/static/assets/images/files/png/${item.ftype}.png`;
+                        return `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
                     }
                 }
 
@@ -132,6 +130,9 @@
                         this.$refs['input_'+item.id][0].$refs.textarea.focus();
                     },500)
                 },500)
+            },
+            onMenuCommand(item){
+                this.$emit("menu-command",item);
             },
             getMenuByType(item){
                 let parent = this.$parent.$parent.$parent.$parent.$parent;
