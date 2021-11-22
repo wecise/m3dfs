@@ -1,6 +1,6 @@
 <template>
 
-  <IndexView :global="global"></IndexView>
+  <IndexView></IndexView>
   
 </template>
 
@@ -8,18 +8,8 @@
 import IndexView from './dfs/index.vue';
 
 export default {
-  name: 'MainView',
-  props: {
-    global: Object,
-    auth: Object
-  },
   components:{
     IndexView
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>

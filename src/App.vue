@@ -1,10 +1,10 @@
 <template>
 
-  <div class="m3 event-console" v-if="auth && global">
+  <div class="m3 m3dfs" v-if="auth && global">
     <Header :auth="auth" class="header" v-if="layout.header.show"></Header>
     <div :class="layout.header.show ? 'main' : 'main-fullscreen'">
       <SideBar class="sidebar" :auth="auth" :global="global" v-if="layout.sidebar.show" ></SideBar>
-      <MainView :global="global" class="content" v-if="global"></MainView>
+      <MainView class="content" v-if="global"></MainView>
     </div>
     <Footer :auth="auth" class="footer" v-if="layout.footer.show"></Footer>
   </div>
@@ -24,12 +24,12 @@ export default {
     Header,
     SideBar,
     Footer,
-    MainView//: resolve => {require(['./components/MainView.vue'], resolve)}
+    MainView
   },
   data(){
     return {
-      global:null,
-      auth: null,
+      global: null,
+      auth:  null,
       layout: {
         header: {
           show: true
@@ -44,10 +44,9 @@ export default {
     }
   },
   created(){
-    
     this.global = this.m3.global;
     this.auth = this.m3.auth.signedUser;
-    
+
     this.eventHub.$on("layout-change",(data)=>{
       this.layout = data;
     })
