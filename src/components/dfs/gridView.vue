@@ -81,13 +81,13 @@
             pickIcon(item){
                 // extend || ...
                 if( item.fullname === '/extend' ){
-                    return `${window.assetsURLBase}/images/files/png/dir-lock.png`;
+                    return `/static/assets/images/images/files/png/dir-lock.png`;
                 } else {
                     try {
-                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
+                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `/static/assets/images/images/files/png/${item.ftype}.png`;
                     }
                     catch(error){
-                        return `${window.assetsURLBase}/images/files/png/${item.ftype}.png`;
+                        return `/static/assets/images/images/files/png/${item.ftype}.png`;
                     }
                 }
 
