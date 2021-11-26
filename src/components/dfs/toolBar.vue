@@ -133,7 +133,7 @@
             },
             onOpen(data){
                 
-                if(this.rootFullName.includes(data)) return;
+                if(!_.isEmpty(data) && this.rootFullName.includes(data)) return;
 
                 if(_.isEmpty(data)){
                     this.$emit("node-click", {parent:"/",fullname:"/"});

@@ -1,11 +1,11 @@
 <template>
-    <div class="content dfs-table-container">
+    <div class="content dfs-table-container" style="overflow: hidden;">
         <el-table  :data="dt.rows"
             stripe
             border
             highlight-current-row="true"
             @selection-change="onSelectionChange"
-            height="calc(100vh - 400px)"
+            height="calc(100vh - 215px)"
             style="width: 100%"
             ref="table">
             <el-table-column type="selection" align="center"></el-table-column> 
@@ -54,6 +54,7 @@
                 </el-table-column>
             </template>
         </el-table>
+        <slot name="footer"></slot>
     </div>
 </template>
 

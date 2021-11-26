@@ -1,6 +1,6 @@
 <template>
 
-  <IndexView></IndexView>
+  <IndexView :root="{parent:'/', fullname:'/'}"></IndexView>
   
 </template>
 

@@ -1,41 +1,44 @@
 <template>
-    <el-checkbox-group v-model="selected" class="content dfs-grid-container">
-        <el-button type="default" 
-                class="dfs-node"
-                @dblclick.native="onDblClick(item)"
-                @click="onTriggerClick(item)"
-                v-for="item in dt.rows"
-                :key="item.id">
-                <div class="dfs-menu">    
-                    <el-dropdown trigger="hover" placement="top-start" @command="onMenuCommand">
-                            <span class="el-dropdown-link">
-                                <i class="el-icon-arrow-down el-icon--right"></i>
-                            </span>
-                            <el-dropdown-menu slot="dropdown">
-                                <el-dropdown-item 
-                                    :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
-                                    v-for="(menuItem,index) in getMenuByType(item)" 
-                                    :key="index"
-                                    :divided="menuItem | pickDivided">
-                                    {{menuItem.name}}
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                    </el-dropdown>
-                </div>
-                <el-image style="width:34px;height:34px;margin:5px;" :src="item | pickIcon"></el-image>
-                <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" v-show="item.editable">
-                    <el-input v-model="item.name" 
-                        type="textarea" 
-                        autosize 
-                        @keyup.enter.native="$event.target.blur"
-                        @blur.self="onRename(item)" :ref="'input_'+item.id"></el-input>
-                </p>
-                <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" @click.self="onSetFocus(item)" v-show="!item.editable">
-                    {{item.name}}
-                </p>
-                <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
-        </el-button>
-    </el-checkbox-group>
+    <div>
+        <el-checkbox-group v-model="selected" class="dfs-grid-container">
+            <el-button type="default" 
+                    class="dfs-node"
+                    @dblclick.native="onDblClick(item)"
+                    @click="onTriggerClick(item)"
+                    v-for="item in dt.rows"
+                    :key="item.id">
+                    <div class="dfs-menu">    
+                        <el-dropdown trigger="click" placement="top-start" @command="onMenuCommand">
+                                <span class="el-dropdown-link">
+                                    <i class="el-icon-arrow-down el-icon--right"></i>
+                                </span>
+                                <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item 
+                                        :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
+                                        v-for="(menuItem,index) in getMenuByType(item)" 
+                                        :key="index"
+                                        :divided="menuItem | pickDivided">
+                                        <i :class="menuItem.icon"></i> {{menuItem.name}}
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                        </el-dropdown>
+                    </div>
+                    <el-image style="width:34px;height:34px;margin:5px;" :src="item | pickIcon"></el-image>
+                    <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" v-show="item.editable">
+                        <el-input v-model="item.name" 
+                            type="textarea" 
+                            autosize 
+                            @keyup.enter.native="$event.target.blur"
+                            @blur.self="onRename(item)" :ref="'input_'+item.id"></el-input>
+                    </p>
+                    <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px;text-align:center;" @click.self="onSetFocus(item)" v-show="!item.editable">
+                        {{item.name}}
+                    </p>
+                    <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
+            </el-button>
+        </el-checkbox-group>
+        <slot name="footer"></slot>
+    </div>
 </template>
 
 <script>
@@ -81,13 +84,13 @@
             pickIcon(item){
                 // extend || ...
                 if( item.fullname === '/extend' ){
-                    return `/static/assets/images/images/files/png/dir-lock.png`;
+                    return `/static/assets/images/files/png/dir-lock.png`;
                 } else {
                     try {
-                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `/static/assets/images/images/files/png/${item.ftype}.png`;
+                        return _.attempt(JSON.parse.bind(null, item.attr)).icon || `/static/assets/images/files/png/${item.ftype}.png`;
                     }
                     catch(error){
-                        return `/static/assets/images/images/files/png/${item.ftype}.png`;
+                        return `/static/assets/images/files/png/${item.ftype}.png`;
                     }
                 }
 
@@ -166,6 +169,10 @@
     .dfs-menu{
         position: relative;
         right: -50px;
+    }
+
+    .el-dropdown-menu.el-popper /deep/ .el-dropdown-menu__item{
+        padding:5px 20px;
     }
 </style>
 

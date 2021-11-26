@@ -1,7 +1,7 @@
 <template>
     <el-container style="height: calc(100vh - 65px);">
         <el-main>
-            <Split direction="horizontal" :gutterSize="5" style="border:1px solid #ddd;">
+            <Split direction="horizontal" :gutterSize="5" style="border:1px solid #f2f2f2;">
                 <SplitArea :size="20" :minSize="0" style="overflow:hidden;background: rgb(242, 242, 242);">
                     <DfsTree :root="root" 
                         @node-click="onNodeClick"
@@ -33,7 +33,11 @@
                             @dbl-click="onLoad"
                             @menu-command="onMenuCommand"
                             ref="dfsList"
-                            style="overflow-x: hidden;"></component>
+                            class="content">
+                            <el-footer  slot="footer" style="height:30px;line-height:30px;width:100%;position:fixed;bottom:35px;">
+                                {{ info.join(' &nbsp; | &nbsp;') }}
+                            </el-footer>    
+                        </component>
                 </SplitArea>
             </Split>
             <el-dialog
@@ -68,6 +72,7 @@
                 rootTitle: "我的文件",
                 currentView: "gridView",
                 selectedItem: [],
+                info: [],
                 model: null,
                 dialog: {
                     copyTo:{
@@ -87,6 +92,18 @@
             tableView: resolve => {require(['./tableView.vue'], resolve)},
             CopyTo: resolve => {require(['./dfsCopyTo.vue'], resolve)},
             MoveTo: resolve => {require(['./dfsMoveTo.vue'], resolve)}
+        },
+        watch:{
+            selectedItem: {
+                handler(val){
+                    this.info = [];
+                    this.info.push(`共 ${this.model?this.model.length:0} 项`);
+                    this.info.push(`已选择 ${val.length} 项`);
+                    this.info.push(new Date().toLocaleString());
+                },
+                deep:true,
+                immediate:true
+            }
         },
         mounted(){
             this.$nextTick(()=>{
@@ -117,6 +134,7 @@
                                     return _.merge(v, {editable: false});
 
                                 }),[v => v.name.toLowerCase(),"ctime"],["asc","desc"]);
+                    this.info[0]=`共 ${this.model?this.model.length:0} 项`;
                 });
             },
             onResetStatus(){
@@ -133,8 +151,8 @@
                 this.onLoad(node);
             },
             onNewDir(node){
-                console.log(111,node)
                 this.$prompt('请输入目录名称', '提示', {
+                    title: '新建目录',
                     confirmButtonText: '确定',
                     cancelButtonText: '取消'
                 }).then(({ value }) => {
@@ -179,6 +197,7 @@
             },
             onNewFile(node){
                 this.$prompt('请输入文件名称', '提示', {
+                    title: '新建文件',
                     confirmButtonText: '确定',
                     cancelButtonText: '取消'
                 }).then(({ value }) => {
@@ -462,14 +481,15 @@
     }
 
     .el-main .content{
-        height: calc(100% - 70px);
-        overflow: auto;
+        height: calc(100% - 110px);
+        overflow-x: hidden;
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-start;
         align-items: flex-start;
         align-content: flex-start;
         background: #ffffff;
+        position: relative;
     }
 
    

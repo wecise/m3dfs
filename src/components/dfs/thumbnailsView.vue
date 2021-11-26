@@ -1,50 +1,53 @@
 <template>
-    <el-checkbox-group v-model="selected" class="content dfs-thumbnails-container">
-        <el-button type="default" 
-                class="dfs-node"
-                @dblclick.native="onDblClick(item)"
-                @click="onTriggerClick(item)"
-                v-for="item in dt.rows"
-                :key="item.id">
-                <div class="dfs-menu">    
-                    <el-dropdown trigger="hover" placement="top-start" @command="onMenuCommand">
-                            <span class="el-dropdown-link">
-                                <i class="el-icon-arrow-down el-icon--right"></i>
-                            </span>
-                            <el-dropdown-menu slot="dropdown">
-                                <el-dropdown-item 
-                                    :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
-                                    v-for="(menuItem,index) in getMenuByType(item)" 
-                                    :key="index"
-                                    :divided="menuItem | pickDivided">
-                                    {{menuItem.name}}
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                    </el-dropdown>
-                </div>
-                <el-image style="width:64px;margin:5px;" :src="item | pickIcon"></el-image>
-                <div class="dfs-props">
-                    <p v-show="item.editable">
-                        <el-input v-model="item.name" 
-                            type="textarea" 
-                            autosize
-                            @keyup.enter.native="$event.target.blur"
-                            @blur.self="onRename(item)" :ref="'input_'+item.id"></el-input>
-                    </p>
-                    <p @click.self="onSetFocus(item)" v-show="!item.editable">
-                        名称： {{item.name}}
-                    </p>
-                    <p>作者：{{item.author}}</p>
-                    <p>创建：{{moment(item.ctime).format("YYYY-MM-DD hh:mm:ss")}}</p>
-                    <p>
-                        标签
-                        <TagView domain='files' :model.sync="item.tags" :id="item.id" limit="1"></TagView>
-                    </p>
-                    <p>描述：{{item|pickRemark}}</p>
-                </div>
-                <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
-        </el-button>
-    </el-checkbox-group>
+    <div>
+        <el-checkbox-group v-model="selected" class="dfs-thumbnails-container">
+            <el-button type="default" 
+                    class="dfs-node"
+                    @dblclick.native="onDblClick(item)"
+                    @click="onTriggerClick(item)"
+                    v-for="item in dt.rows"
+                    :key="item.id">
+                    <div class="dfs-menu">    
+                        <el-dropdown trigger="click" placement="top-start" @command="onMenuCommand">
+                                <span class="el-dropdown-link">
+                                    <i class="el-icon-arrow-down el-icon--right"></i>
+                                </span>
+                                <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item 
+                                        :command="{fun:menuItem.fun,param:item,type:menuItem.type?menuItem.type:false}" 
+                                        v-for="(menuItem,index) in getMenuByType(item)" 
+                                        :key="index"
+                                        :divided="menuItem | pickDivided">
+                                        <i :class="menuItem.icon"></i> {{menuItem.name}}
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                        </el-dropdown>
+                    </div>
+                    <el-image style="width:64px;margin:5px;" :src="item | pickIcon"></el-image>
+                    <div class="dfs-props">
+                        <p v-show="item.editable">
+                            <el-input v-model="item.name" 
+                                type="textarea" 
+                                autosize
+                                @keyup.enter.native="$event.target.blur"
+                                @blur.self="onRename(item)" :ref="'input_'+item.id"></el-input>
+                        </p>
+                        <p @click.self="onSetFocus(item)" v-show="!item.editable">
+                            名称： {{item.name}}
+                        </p>
+                        <p>作者：{{item.author}}</p>
+                        <p>创建：{{moment(item.ctime).format("YYYY-MM-DD hh:mm:ss")}}</p>
+                        <p>
+                            标签
+                            <TagView domain='files' :model.sync="item.tags" :id="item.id" limit="1"></TagView>
+                        </p>
+                        <p>描述：{{item|pickRemark}}</p>
+                    </div>
+                    <el-checkbox :label="item" :ref="'checkBox_'+item.id" v-show="selected.includes(item)"></el-checkbox>
+            </el-button>
+        </el-checkbox-group>
+        <slot name="footer"></slot>
+    </div>
 </template>
 
 <script>
@@ -189,6 +192,10 @@
     .dfs-menu{
         position: relative;
         right: -130px;
+    }
+
+    .el-dropdown-menu.el-popper /deep/ .el-dropdown-menu__item{
+        padding:5px 20px;
     }
 </style>
 
